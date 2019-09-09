@@ -10,11 +10,13 @@ const {
   subjectToSnapshot,
   updateSnapshot,
 } = require('../utils/tasks/textSnapshots');
+const { updateInlineSnapshot } = require('../utils/tasks/inlineSnapshots');
 const getSnapshotFilename = require('../utils/text/getSnapshotFilename');
 const keepKeysFromExpected = require('../utils/text/keepKeysFromExpected');
 const {
   getConfig
 } = require('../config');
+const { COMMAND_MATCH_INLINE_SNAPSHOT } = require('../commands/commandNames')
 
 function matchTextSnapshot({
   commandName,
@@ -23,11 +25,20 @@ function matchTextSnapshot({
   snapshotTitle,
   subject,
   testFile,
+  expected: expectedInline
 } = {}) {
   const config = merge({}, cloneDeep(getConfig()), options);
-  const snapshotFile = getSnapshotFilename(testFile);
-  const expectedRaw = getSnapshot(snapshotFile, snapshotTitle, dataType);
-  let expected = applyReplace(expectedRaw, config.replace);
+  let expected;
+  let snapshotFile;
+  if (commandName === COMMAND_MATCH_INLINE_SNAPSHOT) {
+    expected = expectedInline || false;
+  } else {
+    snapshotFile = getSnapshotFilename(testFile);
+    expected = getSnapshot(snapshotFile, snapshotTitle, dataType);
+    update = (actual) => updateSnapshot(snapshotFile, snapshotTitle, actual, dataType);
+  }
+
+  expected = applyReplace(expected, config.replace);
   const actual = keepKeysFromExpected(subjectToSnapshot(subject, dataType, config), expected, config);
 
   const exists = expected !== false;
@@ -39,7 +50,12 @@ function matchTextSnapshot({
   let updated = false;
 
   if ((config.updateSnapshots && !passed) || expected === false) {
-    updateSnapshot(snapshotFile, snapshotTitle, actual, dataType);
+    if (commandName === COMMAND_MATCH_INLINE_SNAPSHOT) {
+      updateInlineSnapshot(testFile, actual, dataType);
+    } else {
+      updateSnapshot(snapshotFile, snapshotTitle, actual, dataType);
+    }
+
     updated = true;
   }
 

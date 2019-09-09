@@ -41,6 +41,7 @@
     "test": "jest & npm --prefix cypress run cy:run"
   },
   "dependencies": {
+    "@babel/traverse": "^7.6.0",
     "bufferutil": "^4.0.1",
     "chalk": "^2.4.2",
     "diff2html": "^2.7.0",
